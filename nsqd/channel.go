@@ -47,7 +47,7 @@ type Channel struct {
 	nsqd      *NSQD
 
 	backend BackendQueue
-
+	// 消息 channel
 	memoryMsgChan chan *Message
 	exitFlag      int32
 	exitMutex     sync.RWMutex
@@ -85,6 +85,7 @@ func NewChannel(topicName string, channelName string, nsqd *NSQD,
 	}
 	// create mem-queue only if size > 0 (do not use unbuffered chan)
 	if nsqd.getOpts().MemQueueSize > 0 {
+		// 初始化消息 channel，并指定 channel 缓冲大小
 		c.memoryMsgChan = make(chan *Message, nsqd.getOpts().MemQueueSize)
 	}
 	if len(nsqd.getOpts().E2EProcessingLatencyPercentiles) > 0 {
@@ -306,6 +307,8 @@ func (c *Channel) put(m *Message) error {
 	select {
 	case c.memoryMsgChan <- m:
 	default:
+		// 当 select 中的其他分支都没有准备好的时候，default 分支会执行。
+		// 这里是 memoryMsgChan 代表的 channel 满了，则执行 default
 		err := writeMessageToBackend(m, c.backend)
 		c.nsqd.SetHealth(err)
 		if err != nil {

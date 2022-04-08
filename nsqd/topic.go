@@ -311,7 +311,7 @@ func (t *Topic) messagePump() {
 		case <-t.exitChan:
 			goto exit
 		}
-
+		// 将 topic 消息分发给 channel
 		for i, channel := range chans {
 			chanMsg := msg
 			// copy the message because each channel

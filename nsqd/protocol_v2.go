@@ -216,6 +216,7 @@ func (p *protocolV2) messagePump(client *clientV2, startedChan chan bool) {
 	subEventChan := client.SubEventChan
 	identifyEventChan := client.IdentifyEventChan
 	outputBufferTicker := time.NewTicker(client.OutputBufferTimeout)
+	// 心跳 ticker
 	heartbeatTicker := time.NewTicker(client.HeartbeatInterval)
 	heartbeatChan := heartbeatTicker.C
 	msgTimeout := client.MsgTimeout
@@ -298,6 +299,7 @@ func (p *protocolV2) messagePump(client *clientV2, startedChan chan bool) {
 
 			msgTimeout = identifyData.MsgTimeout
 		case <-heartbeatChan:
+			// 发送心跳检测
 			err = p.Send(client, frameTypeResponse, heartbeatBytes)
 			if err != nil {
 				goto exit
@@ -329,6 +331,7 @@ func (p *protocolV2) messagePump(client *clientV2, startedChan chan bool) {
 
 			subChannel.StartInFlightTimeout(msg, client.ID, msgTimeout)
 			client.SendingMessage()
+			// 发送消息
 			err = p.SendMessage(client, msg)
 			if err != nil {
 				goto exit
@@ -582,6 +585,12 @@ func (p *protocolV2) CheckAuth(client *clientV2, cmd, topicName, channelName str
 	return nil
 }
 
+/*
+SUB <topic_name> <channel_name>\n
+Subscribe to a topic/channel
+<topic_name> - a valid string (optionally having #ephemeral suffix)
+<channel_name> - a valid string (optionally having #ephemeral suffix)
+*/
 func (p *protocolV2) SUB(client *clientV2, params [][]byte) ([]byte, error) {
 	if atomic.LoadInt32(&client.State) != stateInit {
 		return nil, protocol.NewFatalClientErr(nil, "E_INVALID", "cannot SUB in current state")
@@ -618,6 +627,7 @@ func (p *protocolV2) SUB(client *clientV2, params [][]byte) ([]byte, error) {
 	for i := 1; ; i++ {
 		topic := p.nsqd.GetTopic(topicName)
 		channel = topic.GetChannel(channelName)
+		// 将 client 添加到 channel
 		if err := channel.AddClient(client.ID, client); err != nil {
 			return nil, protocol.NewFatalClientErr(err, "E_SUB_FAILED", "SUB failed "+err.Error())
 		}
@@ -635,6 +645,7 @@ func (p *protocolV2) SUB(client *clientV2, params [][]byte) ([]byte, error) {
 	atomic.StoreInt32(&client.State, stateSubscribed)
 	client.Channel = channel
 	// update message pump
+	// 发送订阅事件到 channel
 	client.SubEventChan <- channel
 
 	return okBytes, nil
@@ -764,6 +775,13 @@ func (p *protocolV2) NOP(client *clientV2, params [][]byte) ([]byte, error) {
 	return nil, nil
 }
 
+/*
+Publish a message to a topic
+PUB <topic_name>\n
+[ 4-byte size in bytes ][ N-byte binary data ]
+
+<topic_name> - a valid string (optionally having #ephemeral suffix)
+*/
 func (p *protocolV2) PUB(client *clientV2, params [][]byte) ([]byte, error) {
 	var err error
 
