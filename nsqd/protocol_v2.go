@@ -276,6 +276,7 @@ func (p *protocolV2) messagePump(client *clientV2, startedChan chan bool) {
 		case <-client.ReadyStateChan:
 		case subChannel = <-subEventChan:
 			// you can't SUB anymore
+			// 一个 Client 只能订阅一次，不能多次订阅
 			subEventChan = nil
 		case identifyData := <-identifyEventChan:
 			// you can't IDENTIFY anymore
@@ -592,6 +593,7 @@ Subscribe to a topic/channel
 <channel_name> - a valid string (optionally having #ephemeral suffix)
 */
 func (p *protocolV2) SUB(client *clientV2, params [][]byte) ([]byte, error) {
+	// 判断 client 状态
 	if atomic.LoadInt32(&client.State) != stateInit {
 		return nil, protocol.NewFatalClientErr(nil, "E_INVALID", "cannot SUB in current state")
 	}
@@ -642,6 +644,7 @@ func (p *protocolV2) SUB(client *clientV2, params [][]byte) ([]byte, error) {
 		}
 		break
 	}
+	// 更新 client 的 State 为 stateSubscribed，表示已订阅，无法再次订阅
 	atomic.StoreInt32(&client.State, stateSubscribed)
 	client.Channel = channel
 	// update message pump
