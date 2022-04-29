@@ -33,7 +33,7 @@ type Topic struct {
 
 	ephemeral      bool
 	deleteCallback func(*Topic)
-	deleter        sync.Once
+	deleter        sync.Once // deleter 只会执行一次
 
 	paused    int32
 	pauseChan chan int
