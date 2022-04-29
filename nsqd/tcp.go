@@ -52,7 +52,7 @@ func (p *tcpServer) Handle(conn net.Conn) {
 			conn.RemoteAddr(), protocolMagic)
 		return
 	}
-
+	// 对新建立的连接conn 创建一个 client
 	client := prot.NewClient(conn)
 	p.conns.Store(conn.RemoteAddr(), client)
 
@@ -62,6 +62,7 @@ func (p *tcpServer) Handle(conn net.Conn) {
 	}
 
 	p.conns.Delete(conn.RemoteAddr())
+	// 下面一行等价 conn.Close()
 	client.Close()
 }
 
