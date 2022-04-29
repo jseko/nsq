@@ -401,6 +401,7 @@ func (t *Topic) exit(deleted bool) error {
 
 func (t *Topic) Empty() error {
 	for {
+		// 当不存在可以读写的 channel 时，有default，执行default中的语句，否则select会阻塞
 		select {
 		case <-t.memoryMsgChan:
 		default:
