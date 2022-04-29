@@ -646,6 +646,7 @@ func (p *protocolV2) SUB(client *clientV2, params [][]byte) ([]byte, error) {
 	}
 	// 更新 client 的 State 为 stateSubscribed，表示已订阅，无法再次订阅
 	atomic.StoreInt32(&client.State, stateSubscribed)
+	// 一个 Client 只关联一个 Channel，一个 Channel 关联多个 Client
 	client.Channel = channel
 	// update message pump
 	// 发送订阅事件到 channel
