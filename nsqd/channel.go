@@ -440,7 +440,7 @@ func (c *Channel) RemoveClient(clientID int64) {
 	c.Lock()
 	delete(c.clients, clientID)
 	c.Unlock()
-
+	// 移除一个 client 之后，如果没有 client 了，执行删除回调方法，将自身从 topic 中删除
 	if len(c.clients) == 0 && c.ephemeral == true {
 		go c.deleter.Do(func() { c.deleteCallback(c) })
 	}
