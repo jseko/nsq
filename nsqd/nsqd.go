@@ -398,13 +398,14 @@ func (n *NSQD) PersistMetadata() error {
 	if err != nil {
 		return err
 	}
-
+	// 临时文件名
 	tmpFileName := fmt.Sprintf("%s.%d.tmp", fileName, rand.Int())
 
 	err = writeSyncFile(tmpFileName, data)
 	if err != nil {
 		return err
 	}
+	// 对临时文件重命名
 	err = os.Rename(tmpFileName, fileName)
 	if err != nil {
 		return err
