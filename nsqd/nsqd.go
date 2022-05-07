@@ -139,6 +139,7 @@ func New(opts *Options) (*NSQD, error) {
 	n.logf(LOG_INFO, "ID: %d", opts.ID)
 
 	n.tcpServer = &tcpServer{nsqd: n}
+	// tcp listener
 	n.tcpListener, err = net.Listen("tcp", opts.TCPAddress)
 	if err != nil {
 		return nil, fmt.Errorf("listen (%s) failed - %s", opts.TCPAddress, err)
@@ -242,6 +243,7 @@ func (n *NSQD) Main() error {
 	exitCh := make(chan error)
 	var once sync.Once
 	exitFunc := func(err error) {
+		// once.Do() 只会执行一次
 		once.Do(func() {
 			if err != nil {
 				n.logf(LOG_FATAL, "%s", err)
@@ -249,16 +251,18 @@ func (n *NSQD) Main() error {
 			exitCh <- err
 		})
 	}
-
+	// tcp
 	n.waitGroup.Wrap(func() {
 		exitFunc(protocol.TCPServer(n.tcpListener, n.tcpServer, n.logf))
 	})
+	// http
 	if n.httpListener != nil {
 		httpServer := newHTTPServer(n, false, n.getOpts().TLSRequired == TLSRequired)
 		n.waitGroup.Wrap(func() {
 			exitFunc(http_api.Serve(n.httpListener, httpServer, "HTTP", n.logf))
 		})
 	}
+	// https
 	if n.httpsListener != nil {
 		httpsServer := newHTTPServer(n, true, true)
 		n.waitGroup.Wrap(func() {
@@ -271,7 +275,7 @@ func (n *NSQD) Main() error {
 	if n.getOpts().StatsdAddress != "" {
 		n.waitGroup.Wrap(n.statsdLoop)
 	}
-
+	// 会阻塞
 	err := <-exitCh
 	return err
 }

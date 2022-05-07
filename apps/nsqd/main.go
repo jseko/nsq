@@ -86,6 +86,7 @@ func (p *program) Start() error {
 }
 
 func (p *program) Stop() error {
+	// once.Do() 只会执行一次
 	p.once.Do(func() {
 		p.nsqd.Exit()
 	})
