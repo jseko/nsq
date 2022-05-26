@@ -95,9 +95,10 @@ func New(opts *Options) (*NSQD, error) {
 		dl:                   dirlock.New(dataPath),
 	}
 	n.ctx, n.ctxCancel = context.WithCancel(context.Background())
+	// 创建 http client
 	httpcli := http_api.NewClient(nil, opts.HTTPClientConnectTimeout, opts.HTTPClientRequestTimeout)
 	n.ci = clusterinfo.New(n.logf, httpcli)
-
+	// 存储 nsqlookupd 信息
 	n.lookupPeers.Store([]*lookupPeer{})
 
 	n.swapOpts(opts)
@@ -271,6 +272,7 @@ func (n *NSQD) Main() error {
 	}
 
 	n.waitGroup.Wrap(n.queueScanLoop)
+	// 连接到 nsqlookupd
 	n.waitGroup.Wrap(n.lookupLoop)
 	if n.getOpts().StatsdAddress != "" {
 		n.waitGroup.Wrap(n.statsdLoop)
@@ -456,6 +458,7 @@ func (n *NSQD) Exit() {
 	n.waitGroup.Wait()
 	n.dl.Unlock()
 	n.logf(LOG_INFO, "NSQ: bye")
+	// 	执行 ctx cancel
 	n.ctxCancel()
 }
 

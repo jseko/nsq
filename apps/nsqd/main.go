@@ -54,7 +54,7 @@ func (p *program) Init(env svc.Environment) error {
 	cfg.Validate()
 
 	options.Resolve(opts, flagSet, cfg)
-
+	// 创建 NSQD
 	nsqd, err := nsqd.New(opts)
 	if err != nil {
 		logFatal("failed to instantiate nsqd - %s", err)
