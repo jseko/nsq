@@ -79,7 +79,7 @@ func NewTopic(topicName string, nsqd *NSQD, deleteCallback func(*Topic)) *Topic 
 			dqLogf,
 		)
 	}
-
+	// 将 message 分发到 topic 下的所有 channel
 	t.waitGroup.Wrap(t.messagePump)
 
 	t.nsqd.Notify(t, !t.ephemeral)
