@@ -9,8 +9,14 @@ NSQ 实时分布式消息平台
 - 集成方便：目前主流语言都有相应的[客户端支持](https://nsq.io/clients/client_libraries.html) 。
 
 ### 快速部署
-- nsqd 负责接收、排队、转发消息到客户端的守护进程，可以单独运行，监听 4150（TCP）、4151（HTTP）、4152（HTTPS，可选）端口；
-- nsqlookupd 管理拓扑信息，客户端查询 `nsqlookupd` 发现指定 topic 的 `nsqd` 生产者，`nsqd` 向 `nsqlookupd` 广播 topic 和 channel 信息，监听 4160（TCP） 和 4161（HTTP）端口；
+- nsqd
+  - 负责接收、排队、转发消息到客户端的守护进程，可以单独运行
+  - 监听 4150（TCP）、4151（HTTP）、4152（HTTPS，可选）端口
+- nsqlookupd 
+  - 管理拓扑信息
+  - 客户端查询 `nsqlookupd` 发现指定 topic 的 `nsqd` 生产者
+  - `nsqd` 向 `nsqlookupd` 广播 topic 和 channel 信息
+  - 监听 4160（TCP） 和 4161（HTTP）端口；
 - nsqadmin
 
 ### 功能演示
