@@ -1,4 +1,15 @@
 NSQ 实时分布式消息平台
+
+### 为什么要选择学习 NSQ 源码
+- NSQ 使用 Go 语言开发
+- NSQ 设计到的技术点
+  - slice map interface
+  - goroutine  
+  - channel
+  - lock
+  - 网络 tcp http
+  - 自定义数据报文、编解码
+
 ### 简单介绍
 官网地址 [https://nsq.io](https://nsq.io)
 
@@ -18,6 +29,7 @@ NSQ 实时分布式消息平台
   - `nsqd` 向 `nsqlookupd` 广播 topic 和 channel 信息
   - 监听 4160（TCP） 和 4161（HTTP）端口；
 - nsqadmin
+  - 提供一个 web ui, 用于实时查看集群信息，进行各种任务管理。
 
 ### 功能演示
 
