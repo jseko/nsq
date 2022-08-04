@@ -3,11 +3,11 @@ NSQ 实时分布式消息平台
 ### 为什么要选择学习 NSQ 源码
 - NSQ 使用 Go 语言开发
 - NSQ 设计到的技术点
-  - slice map interface
+  - slice、map、struct、interface、error
   - goroutine  
   - channel
   - lock
-  - 网络 tcp http
+  - 网络 tcp、http
   - 自定义数据报文、编解码
 
 ### 简单介绍
