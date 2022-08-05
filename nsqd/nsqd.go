@@ -56,6 +56,7 @@ type NSQD struct {
 
 	topicMap map[string]*Topic
 
+	// 存储连接 lookupd 信息 lookupPeer
 	lookupPeers atomic.Value
 
 	tcpServer     *tcpServer

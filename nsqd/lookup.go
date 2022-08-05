@@ -97,6 +97,7 @@ func (n *NSQD) lookupLoop() {
 				n.logf(LOG_INFO, "LOOKUP(%s): adding peer", host)
 				lookupPeer := newLookupPeer(host, n.getOpts().MaxBodySize, n.logf,
 					connectCallback(n, hostname))
+				// 连接到 lookupd
 				lookupPeer.Command(nil) // start the connection
 				lookupPeers = append(lookupPeers, lookupPeer)
 				lookupAddrs = append(lookupAddrs, host)

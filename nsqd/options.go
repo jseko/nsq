@@ -107,7 +107,7 @@ func NewOptions() *Options {
 		BroadcastAddress:  hostname,
 		BroadcastTCPPort:  0,
 		BroadcastHTTPPort: 0,
-
+		// lookupd tcp 地址
 		NSQLookupdTCPAddresses: make([]string, 0),
 		AuthHTTPAddresses:      make([]string, 0),
 
