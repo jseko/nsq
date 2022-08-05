@@ -115,11 +115,13 @@ func (lp *lookupPeer) Command(cmd *nsq.Command) ([]byte, error) {
 	if cmd == nil {
 		return nil, nil
 	}
+	// 将 cmd 发送给 lookupd
 	_, err := cmd.WriteTo(lp)
 	if err != nil {
 		lp.Close()
 		return nil, err
 	}
+	// 读取 lookupd 的响应
 	resp, err := readResponseBounded(lp, lp.maxBodySize)
 	if err != nil {
 		lp.Close()

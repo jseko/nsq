@@ -109,6 +109,7 @@ func (n *NSQD) lookupLoop() {
 		select {
 		case <-ticker:
 			// send a heartbeat and read a response (read detects closed conns)
+			// 发送心跳到 lookupd，这个时候 nsqd 是客户端（使用go-nsq库），向服务端 lookupd 发送数据
 			for _, lookupPeer := range lookupPeers {
 				n.logf(LOG_DEBUG, "LOOKUPD(%s): sending heartbeat", lookupPeer)
 				cmd := nsq.Ping()
