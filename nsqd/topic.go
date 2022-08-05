@@ -60,8 +60,10 @@ func NewTopic(topicName string, nsqd *NSQD, deleteCallback func(*Topic)) *Topic 
 	if nsqd.getOpts().MemQueueSize > 0 {
 		t.memoryMsgChan = make(chan *Message, nsqd.getOpts().MemQueueSize)
 	}
+	// 根据 topic 的名称后缀判断是否为临时 topic
 	if strings.HasSuffix(topicName, "#ephemeral") {
 		t.ephemeral = true
+		// 临时 topic 的 memoryMsgChan 满了，新的 message 不会写入Disk
 		t.backend = newDummyBackendQueue()
 	} else {
 		dqLogf := func(level diskqueue.LogLevel, f string, args ...interface{}) {
