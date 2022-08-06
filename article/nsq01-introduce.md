@@ -182,11 +182,12 @@ NSQ 的生产-消费的流程就演示到这里， 在 `nsqd` 独立使用模式
   $ ./nsqd --lookupd-tcp-address=192.168.56.101:4160 --lookupd-tcp-address=192.168.56.102:4160 --lookupd-tcp-address=192.168.56.103:4160
   ```
 - 启动 nsqadmin
-  在 node103 上运行 `nsadmin`
+  在 node101 上运行 `nsqadmin`
   ```shell
   $ ./nsqadmin --lookupd-http-address=192.168.56.101:4161 --lookupd-http-address=192.168.56.102:4161 --lookupd-http-address=192.168.56.103:4161
   ```
-
+启动完成后，访问 `nsqadmin` 通过浏览器访问 http://192.168.56.101:4171
+![nsq-cluster](nsq01/cluster.png)
 
 下一篇文章我们将介绍 NSQ 源码下载，从源码启动 nsqd 程序，敬请关注。
 
