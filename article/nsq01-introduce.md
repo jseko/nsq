@@ -35,8 +35,26 @@ NSQ 实时分布式消息平台
 - 集成方便：目前主流语言都有相应的[客户端支持](https://nsq.io/clients/client_libraries.html) 。
 
 #### 一些概念
-- topic 主题
-- channel 通道
+- Topic 主题，存储生产者发送过来的数据
+- Channel 通道，这里的 channel 不是指 Go 语言中的 channel，而是 nsqd 内部的数据结构。
+
+生产者将数据发送给 Topic，消费者消费 Topic 中的数据需要指定 Topic 和 Channel 的名称，Channel 名称可以指定也可以不指定，如果不自定则会生成一个临时的 Channel。
+  
+![img.png](nsq01/point.png)
+
+假如有一个购物平台，用户下单购物送积分，订单服务作为生产者将订单消息发送给 `nsqd` 的订单 topic，`nsqd` 将订单 Topic 中的订单信息发送给积分 Channel，积分服务消费订单数据，给用户加积分。
+生产者只负责把数据发送给某个 Topic，生产者不用管有哪些消费者。消费者想要消费数据需要指定 Topic 和  Channel，这里的 Channel 是消费者指定的。
+
+![img_1.png](nsq01/multi-point.png)
+
+积分服务一般都会部署多个节点，比如这里部署了3个节点，3个积分服务实例都消费同一个 Topic/Channel （订单/积分）中的数据，那么 `nsqd` 只会把积分 Channel 中的订单信息发送给其中一个节点。
+
+![img_2.png](nsq01/point-store-coupon.png)
+
+用户下单还会涉及到库存和优惠券服务，那么同样的库存服务和优惠券服务也需要消费订单 Topic 的数据，那么他们分别指定 Topic/Channel 为 订单/库存 和 订单/优惠券 就可以了， 
+`nsqd` 负责将订单 Topic 中的数据发送给 3 个 Channel（积分、库存、优惠券）。
+
+![nsqd](nsq01/topic-channel.gif)
 
 ### 核心组件
 - nsqd
@@ -63,7 +81,7 @@ NSQ 实时分布式消息平台
 
 
 ### 快速部署
-`nsqd` 支持单独部署，只部署 `nsqd` 就可以了。也支持分布式部署，需要 `nsqd`、`nsqlookupd`、`nsqadmin`。
+`nsqd` 支持单独部署，只部署 `nsqd` 就可以了。也支持集群部署，需要 `nsqd`、`nsqlookupd`、`nsqadmin`。
 #### 单机部署 
 准备一台机器
 - 系统版本：CentOS Linux release 7.7.1908 (Core)
@@ -104,7 +122,7 @@ $ ./nsqd
 
 - 启动 nsqadmin
 ```shell
-./nsqadmin ./nsqadmin --nsqd-http-address=192.168.56.101:4151
+$ ./nsqadmin ./nsqadmin --nsqd-http-address=192.168.56.101:4151
 ```
 我们这里是单机部署，nsqadmin 需要指定 nsqd 的 http 地址
 可以看到日志如下
@@ -118,32 +136,56 @@ $ ./nsqd
 ![nsqd](nsq01/nodes.png)
 
 #### 功能演示
-下面我们发送一些数据给 `nsqd` 
-
+下面我们发送一些数据给 `nsqd` 并消费。这里我们就不写生产者和消费者代码了，通过 http 发送数据给 `nsqd`，使用 NSQ 提供的工具 `nsq_tail` 消费数据。
+打开一个控制台，先通过`nsq_tail`启动消费者，指定了 `nsqd` 的 tcp 地址，`topic` 名称 order，表示我们要消费名称为 order 的 topic 里的数据。
+```shell
+$ ./nsq_tail --nsqd-tcp-address 192.168.56.101:4150 --topic=order
+```
+输出日志如下
+```shell
+2022/08/06 11:41:28 Adding consumer for topic: order
+2022/08/06 11:41:28 INF    1 [order/tail005639#ephemeral] (192.168.56.101:4150) connecting to nsqd
+```
+通过 curl 发送一些数据（hello world 1）到名称为 order 的 topic
+```shell
+$ curl -d 'hello world 1' 'http://192.168.56.101:4151/pub?topic=order'
+```
+再次查看消费者控制台，可以看到已经消费到了数据 hello world 1
+```shell
+[root@node101 bin]# ./nsq_tail --nsqd-tcp-address 192.168.56.101:4150 --topic=order
+2022/08/06 11:41:28 Adding consumer for topic: order
+2022/08/06 11:41:28 INF    1 [order/tail005639#ephemeral] (192.168.56.101:4150) connecting to nsqd
+hello world 1
+```
+NSQ 的生产-消费的流程就演示到这里， 在 `nsqd` 独立使用模式中我们的生产者和消费者都是直接连接到 `nsqd`，当然 `nsadmin` 也是连接到 `nsqd` 的 http 端口。
+接下来，我们看下 NSQ 的集群模式。
 
 #### 集群部署
 准备 3 台机器，下面列出了每个机器需要部署到组件
 
 | 主机名  | IP地址         | 组件                              |
 | ------- | :------------- | :-------------------------------- |
-| node101 | 192.168.56.101 | nsqd, nsqlookupd  |
+| node101 | 192.168.56.101 | nsqd, nsqlookupd, nsqadmin  |
 | node102 | 192.168.56.102 | nsqd, nsqlookupd |
-| node103 | 192.168.56.103 | nsqd, nsqlookupd, nsqadmin |
-
+| node103 | 192.168.56.103 | nsqd, nsqlookupd |
 
 - 启动 nsqlookupd
+  `nsqlookupd` 可以部署任意多个节点，一般推荐至少3个节点，各个 `nsqlookupd` 节点之间是不协调提供查询，
+  分别在 3 台机器上运行 `nsqlookupd`
   ```shell
-  $ nsqlookupd
+  $ ./nsqlookupd
   ```
-- 启动 nsqd
+  
+- 启动 nsqd 
+  分别在 3 台机器上运行 `nsqd`
   ```shell
-  $ nsqd --lookupd-tcp-address=127.0.0.1:4160
+  $ ./nsqd --lookupd-tcp-address=192.168.56.101:4160 --lookupd-tcp-address=192.168.56.102:4160 --lookupd-tcp-address=192.168.56.103:4160
   ```
 - 启动 nsqadmin
+  在 node103 上运行 `nsadmin`
   ```shell
-  $ nsqadmin --lookupd-http-address=127.0.0.1:4161
+  $ ./nsqadmin --lookupd-http-address=192.168.56.101:4161 --lookupd-http-address=192.168.56.102:4161 --lookupd-http-address=192.168.56.103:4161
   ```
-
 
 
 下一篇文章我们将介绍 NSQ 源码下载，从源码启动 nsqd 程序，敬请关注。
