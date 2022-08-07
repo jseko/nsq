@@ -5,7 +5,7 @@ NSQ 实时分布式消息平台
 
 我们看到的八股文都是大牛们看源码以后，用文字的形式表述出来的，有时候我们看了八股文，虽然当时记住了，但是过段时间又会忘记了，没有自己去看源码印象深刻。
 
-阅读源码可能不像学习框架的使用来的那么直接，有时候甚至很枯燥，坚持看下去，源码面前毫无秘密，读源码会有一种豁然开朗到感觉。
+阅读源码可能不像学习框架的使用来的那么直接，有时候甚至很枯燥，坚持看下去，源码面前毫无秘密，读源码会有一种豁然开朗的感觉。
 
 ### 怎么读源码
 - 先学会用，读官网文档，读技术文章
@@ -20,7 +20,7 @@ NSQ 实时分布式消息平台
 - NSQ 使用 Go 语言开发
 - NSQ 涉及到的 Go 技术点
   - slice、map、struct、interface、error
-  - goroutine、channel
+  - goroutine、channel、select
   - lock
   - 网络编程 tcp、http
   - 自定义数据报文、编解码
@@ -67,19 +67,17 @@ NSQ 实时分布式消息平台
   - `nsqd` 向 `nsqlookupd` 广播 topic 和 channel 信息
   - 客户端查询 `nsqlookupd` 发现指定 topic 的 `nsqd` 生产者
   - 监听 4160（TCP） 和 4161（HTTP）端口；
-- nsqadmin
-  
-- 提供一个 web ui, 用于实时查看集群信息，进行各种任务管理。
+- nsqadmin 
+  提供一个 web ui, 用于实时查看集群信息，进行各种任务管理。
   
 - utilities
-  
   nsq 也提供了一些工具供我们使用
   - nsq_stat 拉取指定 topic/channel 的所有消费者，展示统计数据
   - nsq_tail 消费指定 topic/channel 的数据，并输出到控制台
   - nsq_to_file 消费指定 topic/channel 的数据，并写到文件中，有选择的滚动和/或压缩文件
   - nsq_to_http 消费指定 topic/channel 的数据，发送到指定的 HTTP 端点
   - nsq_to_nsq 消费者指定 topic/channel 的数据，通过 TCP 重发布消息到目的 nsqd
-  - to_nsq 通过标准输入流将数据发送到母的 nsqd
+  - to_nsq 通过标准输入流将数据发送到目的 nsqd
 
 
 ### 快速部署
