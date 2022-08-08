@@ -122,7 +122,7 @@ NSQ 实时分布式消息平台
 
 - 启动 nsqadmin
   ```shell
-  $ ./nsqadmin ./nsqadmin --nsqd-http-address=192.168.56.101:4151
+  $ ./nsqadmin --nsqd-http-address=192.168.56.101:4151
   ```
   我们这里是单机部署，nsqadmin 需要指定 nsqd 的 http 地址
   可以看到日志如下
