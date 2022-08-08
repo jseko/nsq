@@ -21,6 +21,7 @@ func connectCallback(n *NSQD, hostname string) func(*lookupPeer) {
 		ci["hostname"] = hostname
 		ci["broadcast_address"] = n.getOpts().BroadcastAddress
 
+		// 构造 IDENTIFY 命令，发送给 nsqlookupd
 		cmd, err := nsq.Identify(ci)
 		if err != nil {
 			lp.Close()
@@ -35,6 +36,7 @@ func connectCallback(n *NSQD, hostname string) func(*lookupPeer) {
 			lp.Close()
 			return
 		} else {
+			// 对 loopupd 返回的信息解码，获取 nsqlookupd 的元数据
 			err = json.Unmarshal(resp, &lp.Info)
 			if err != nil {
 				n.logf(LOG_ERROR, "LOOKUPD(%s): parsing response - %s", lp, resp)
@@ -64,6 +66,7 @@ func connectCallback(n *NSQD, hostname string) func(*lookupPeer) {
 		}
 		n.RUnlock()
 
+		// 将当前 nsqd 中的所有 topic/channel 信息注册到 nsqlookupd
 		for _, cmd := range commands {
 			n.logf(LOG_INFO, "LOOKUPD(%s): %s", lp, cmd)
 			_, err := lp.Command(cmd)
