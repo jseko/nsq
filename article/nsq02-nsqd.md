@@ -3,14 +3,31 @@
 
 ### 下载源码
 下载代码到本地机器，访问自己的 GitHub 帐号刚刚 fork 点击 nsq 源码，点击 Code -> SSH -> 复制地址
-在自己本地机器执行 `git clone`
+在自己本地机器执行 `git clone` 下载源码
 ```shell
 git clone git@github.com:geekymv/nsq.git
+```
+
+创建 git 分支
+```shell
+git checkout -b nsq-annotated
+```
+这样我们以后看代码都在这个分支上进行，可以任意修改代码、添加注释等
+```shell
+git push origin nsq-annotated
 ```
 
 ### 导入到开发工具
 nsq 源码的依赖是通过 `go mod` 管理的，关于 `go mod` 的使用不熟悉的朋友可以自己搜索资料学习下，我这里就不过多赘述了。
 将下载下来的源码导入到自己熟悉的开发工具，我这里导入到 GoLand。
+
+### 下载依赖
+```shell
+go mod tidy
+```
+
+
+
 
 ### NSQ Design
 
