@@ -52,9 +52,9 @@ func (p *program) Init(env svc.Environment) error {
 		}
 	}
 	cfg.Validate()
-
+	// 将 flagSet 和 cfg 的配置信息合并到 opts
 	options.Resolve(opts, flagSet, cfg)
-	// 创建 NSQD
+	// 创建 nsqd
 	nsqd, err := nsqd.New(opts)
 	if err != nil {
 		logFatal("failed to instantiate nsqd - %s", err)
@@ -75,6 +75,7 @@ func (p *program) Start() error {
 	}
 
 	go func() {
+		// 启动 nsqd
 		err := p.nsqd.Main()
 		if err != nil {
 			p.Stop()

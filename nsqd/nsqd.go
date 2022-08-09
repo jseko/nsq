@@ -95,6 +95,7 @@ func New(opts *Options) (*NSQD, error) {
 		optsNotificationChan: make(chan struct{}, 1),
 		dl:                   dirlock.New(dataPath),
 	}
+	// 创建 context
 	n.ctx, n.ctxCancel = context.WithCancel(context.Background())
 	// 创建 http client
 	httpcli := http_api.NewClient(nil, opts.HTTPClientConnectTimeout, opts.HTTPClientRequestTimeout)
@@ -271,14 +272,14 @@ func (n *NSQD) Main() error {
 			exitFunc(http_api.Serve(n.httpsListener, httpsServer, "HTTPS", n.logf))
 		})
 	}
-
+	// 维护 channel 中的延时队列和等待消息确认队列
 	n.waitGroup.Wrap(n.queueScanLoop)
 	// 连接到 nsqlookupd
 	n.waitGroup.Wrap(n.lookupLoop)
 	if n.getOpts().StatsdAddress != "" {
 		n.waitGroup.Wrap(n.statsdLoop)
 	}
-	// 会阻塞
+	// 阻塞
 	err := <-exitCh
 	return err
 }
@@ -606,17 +607,17 @@ func (n *NSQD) resizePool(num int, workCh chan *Channel, responseCh chan bool, c
 	if idealPoolSize < 1 {
 		idealPoolSize = 1
 	} else if idealPoolSize > n.getOpts().QueueScanWorkerPoolMax {
-		idealPoolSize = n.getOpts().QueueScanWorkerPoolMax
+		idealPoolSize = n.getOpts().QueueScanWorkerPoolMax // default 4
 	}
 	for {
 		if idealPoolSize == n.poolSize {
 			break
 		} else if idealPoolSize < n.poolSize {
-			// contract
+			// contract 缩小 goroutine 数量
 			closeCh <- 1
 			n.poolSize--
 		} else {
-			// expand
+			// expand 增加 goroutine 数量
 			n.waitGroup.Wrap(func() {
 				n.queueScanWorker(workCh, responseCh, closeCh)
 			})
@@ -660,12 +661,12 @@ func (n *NSQD) queueScanWorker(workCh chan *Channel, responseCh chan bool, close
 // If QueueScanDirtyPercent (default: 25%) of the selected channels were dirty,
 // the loop continues without sleep.
 func (n *NSQD) queueScanLoop() {
-	workCh := make(chan *Channel, n.getOpts().QueueScanSelectionCount)
+	workCh := make(chan *Channel, n.getOpts().QueueScanSelectionCount) // default 20
 	responseCh := make(chan bool, n.getOpts().QueueScanSelectionCount)
 	closeCh := make(chan int)
 
-	workTicker := time.NewTicker(n.getOpts().QueueScanInterval)
-	refreshTicker := time.NewTicker(n.getOpts().QueueScanRefreshInterval)
+	workTicker := time.NewTicker(n.getOpts().QueueScanInterval)           // default 100ms
+	refreshTicker := time.NewTicker(n.getOpts().QueueScanRefreshInterval) // default 5s
 
 	channels := n.channels()
 	n.resizePool(len(channels), workCh, responseCh, closeCh)
