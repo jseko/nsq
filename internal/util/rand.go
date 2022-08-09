@@ -4,6 +4,7 @@ import (
 	"math/rand"
 )
 
+// UniqRands 生成不重复的随机数
 func UniqRands(quantity int, maxval int) []int {
 	if maxval < quantity {
 		quantity = maxval
