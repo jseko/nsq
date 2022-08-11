@@ -429,6 +429,7 @@ func (n *NSQD) Exit() {
 		return
 	}
 	if n.tcpListener != nil {
+		// 关闭 tcp listener，Accept() 方法将不会阻塞并返回 error
 		n.tcpListener.Close()
 	}
 
@@ -443,7 +444,7 @@ func (n *NSQD) Exit() {
 	if n.httpsListener != nil {
 		n.httpsListener.Close()
 	}
-
+	// 保存元数据（topic/channel）
 	n.Lock()
 	err := n.PersistMetadata()
 	if err != nil {
@@ -457,6 +458,7 @@ func (n *NSQD) Exit() {
 
 	n.logf(LOG_INFO, "NSQ: stopping subsystems")
 	close(n.exitChan)
+	// 等待所有 goroutine 退出
 	n.waitGroup.Wait()
 	n.dl.Unlock()
 	n.logf(LOG_INFO, "NSQ: bye")
