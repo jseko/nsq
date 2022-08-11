@@ -1,3 +1,11 @@
+nsqd 的生命周期-初始化、启动和优雅退出
+
+本篇文章涉及到的Go语言的知识点
+- channel 、select
+- os.Signal
+- context.Context
+- sync.Once
+
 ### fork 源码
 访问 [GitHub NSQ源码](https://github.com/nsqio/nsq) ，为了以后方便代码管理，我们可以 fork nsq 源码到自己的 GitHub 帐号仓库下，比如我fork 到自己仓库的地址 https://github.com/geekymv/nsq
 
@@ -27,7 +35,27 @@ go mod tidy
 ```
 
 ### 目录结构
-
+源码下载下来了，有了源码我们就有了全部，我们先看下 NSQ 代码目录结构
+```text
++-- apps
+    +-- nsq_stat
+    +-- nsq_tail
+    ...
+    +-- nsqadmin
+    +-- nsqd
+         main.go
+         ...
+    +-- nsqlookupd
+    ...
++-- bench
++-- contrib
++-- internal
++-- nsqadmin
++-- nsqd
++-- nsqlookupd
+...
+```
+良好的代码结构非常重要，让我们一看就知道每个目录是干嘛用的，NSQ 的代码结构非常清晰，
 
 
 ### 启动 nsqd
@@ -49,7 +77,7 @@ Compilation finished with exit code 2
 
 ### 运行 NSQD
 NSQ 使用 `go-svc`库来启动 Service，执行 `svc.Run` 的时候调用 Service 实现的 `Init` 和 `Start` 方法，
-同时监听两个信号量 `syscall.SIGINT` 和 `syscall.SIGTERM`，当信号量触发的时候调用 Service 实现的 `Stop` 方法实现优雅退出。
+同时监听两个信号量 `syscall.SIGINT` 和 `syscall.SIGTERM`，当信号量触发的时候调用 Service 实现的 `Stop` 方法优雅退出。
 
 ```go
 type program struct {
@@ -64,12 +92,13 @@ func main() {
 	}
 }
 ```
-
+首先定义了结构体 `program`， 它包含两个成员变量 `once sync.Once` 和 `nsqd *nsqd.NSQD`，`once` 保证退出操作 `Stop` 只会执行一次，`nsqd` 就代表我们要启动的 `nsqd` 服务。
 program 实现了 `go-svc` 中的 `Service`、`Context` 和 `Handler` 接口，主要是 `Service` 接口中的3个方法 `Init`、`Start` 和 `Stop`。
 
-
+TODO 图
 
 ### svc.Run 生命周期
+`svc.Run()` 方法是如何调用 `program` 实现的3个方法 `Init`、`Start` 和 `Stop` 的呢
 ```go
 package svc
 
@@ -141,4 +170,5 @@ func (environment) IsWindowsService() bool {
 
 ```
 
-这里的实现有点模版方法的
+`go-svc` 这里的实现有点模版方法的意思，接口定义规范（`Init`、`Start` 和 `Stop` 方法），我们的程序 `program` 具体实现接口中定义的这些方法，`go-svc` 提供了统一的入口（`Run`方法）去执行这行方法逻辑，将整个流程串起来。
+这里的设计也是值得我们学习的地方，我们在业务程序中也可以直接复用 `go-svc` 库，同样会有 `Init`、`Start` 和 `Stop` 三个步骤。
