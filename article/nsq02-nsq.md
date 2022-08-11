@@ -55,7 +55,7 @@ go mod tidy
 +-- nsqlookupd
 ...
 ```
-良好的代码结构非常重要，让我们一看就知道每个目录是干嘛用的，NSQ 的代码结构非常清晰，
+良好的代码结构非常重要，让我们一看就知道每个目录是干嘛用的，NSQ 的代码结构非常清晰，apps/nsqd 目录下的`main.go` 就是 `nsqd `入口。
 
 
 ### 启动 nsqd
@@ -70,7 +70,7 @@ apps/nsqd 目录下的`main.go` 是 `nsqd `入口，在 GoLand 开发工具中�
 Compilation finished with exit code 2
 ```
 
-` Run 'go build main.go'`这种方式只会运行 `main.go` 文件，`nsqd` 代码当然不会只有一个文件，我们这里可以以目录的方式运行，在 Goland 的右上方找到 `Edit Configurations` 并单击，编辑配置，把 `Run Kind` 改为 **Directory** ，把下面的 Directory 指定到 `main.go` 所在的 nsqd 目录，保存，再次运行点击右上角的 `Run` 或 `Debug` 即可运行。
+`Run 'go build main.go'`这种方式只会运行 `main.go` 文件，`nsqd` 代码当然不会只有一个文件，我们这里可以以目录的方式运行，在 Goland 的右上方找到 `Edit Configurations` 并单击，编辑配置，把 `Run Kind` 改为 **Directory** ，把下面的 Directory 指定到 `main.go` 所在的 nsqd 目录，保存，再次运行点击右上角的 `Run` 或 `Debug` 即可运行。
 
 ![nsqd](nsq02/nsqd.png)
 
@@ -93,11 +93,97 @@ func main() {
 }
 ```
 首先定义了结构体 `program`， 它包含两个成员变量 `once sync.Once` 和 `nsqd *nsqd.NSQD`，`once` 保证退出操作 `Stop` 只会执行一次，`nsqd` 就代表我们要启动的 `nsqd` 服务。
+
 program 实现了 `go-svc` 中的 `Service`、`Context` 和 `Handler` 接口，主要是 `Service` 接口中的3个方法 `Init`、`Start` 和 `Stop`。
 
-TODO 图
+![svc](nsq02/svc.png)
 
-### svc.Run 生命周期
+- Init
+Init 方法主要做了两件事，获取启动配置参数和用这些参数初始化 NSQD，
+这些初始化需要的参数信息来源主要有两个，一个是通过命令行参数指定，比如我们之前启动 `nsqd` 服务使用的 `./nsqd --lookupd-tcp-address=192.168.56.101:4160`，另一个是来源是配置文件。
+  
+```go
+func (p *program) Init(env svc.Environment) error {
+	opts := nsqd.NewOptions()
+	// 解析命令行参数
+	flagSet := nsqdFlagSet(opts)
+	flagSet.Parse(os.Args[1:])
+
+	// 使用时间作为随机种子值
+	rand.Seed(time.Now().UTC().UnixNano())
+
+	// 启动命令 `nsqd -version` 用于打印版本号，并退出
+	if flagSet.Lookup("version").Value.(flag.Getter).Get().(bool) {
+		fmt.Println(version.String("nsqd"))
+		os.Exit(0)
+	}
+
+	// 读取配置文件
+	var cfg config
+	configFile := flagSet.Lookup("config").Value.String()
+	if configFile != "" {
+		_, err := toml.DecodeFile(configFile, &cfg)
+		if err != nil {
+			logFatal("failed to load config file %s - %s", configFile, err)
+		}
+	}
+	cfg.Validate()
+	// 将 flagSet 和 config 的配置信息合并到 opts
+	options.Resolve(opts, flagSet, cfg)
+
+	// 创建 nsqd
+	nsqd, err := nsqd.New(opts)
+	if err != nil {
+		logFatal("failed to instantiate nsqd - %s", err)
+	}
+	p.nsqd = nsqd
+
+	return nil
+}
+```
+- Start
+
+启动一个 goroutine 执行 nsqd 的 Main 函数
+```go
+func (p *program) Start() error {
+	// 加载元数据
+	err := p.nsqd.LoadMetadata()
+	if err != nil {
+		logFatal("failed to load metadata - %s", err)
+	}
+	// 持久化元数据
+	err = p.nsqd.PersistMetadata()
+	if err != nil {
+		logFatal("failed to persist metadata - %s", err)
+	}
+
+	go func() {
+		// 启动 nsqd
+		err := p.nsqd.Main()
+		if err != nil {
+			p.Stop()
+			os.Exit(1)
+		}
+	}()
+
+	return nil
+}
+```  
+
+- Stop
+这里使用了 sync.Once 保证退出只会执行一次。
+```go
+func (p *program) Stop() error {
+	// once.Do() 只会执行一次
+	p.once.Do(func() {
+		p.nsqd.Exit()
+	})
+	return nil
+}
+```
+我们这里只是大概浏览了`Init`、`Start` 和 `Stop` 实现了哪些逻辑，具体的我们在后面继续分析。
+
+### svc.Run 运行服务
 `svc.Run()` 方法是如何调用 `program` 实现的3个方法 `Init`、`Start` 和 `Stop` 的呢
 ```go
 package svc
