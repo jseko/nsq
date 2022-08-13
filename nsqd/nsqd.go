@@ -46,14 +46,17 @@ type NSQD struct {
 	// ctxCancel cancels a context that main() is waiting on
 	ctxCancel context.CancelFunc
 
+	// 存储 options 信息
 	opts atomic.Value
 
+	// 目录锁
 	dl        *dirlock.DirLock
 	isLoading int32
 	isExiting int32
 	errValue  atomic.Value
 	startTime time.Time
 
+	// 存储 topic 信息
 	topicMap map[string]*Topic
 
 	// 存储连接 lookupd 信息 lookupPeer
@@ -78,6 +81,7 @@ type NSQD struct {
 func New(opts *Options) (*NSQD, error) {
 	var err error
 
+	// diskqueue 数据存储路径
 	dataPath := opts.DataPath
 	if opts.DataPath == "" {
 		cwd, _ := os.Getwd()
@@ -88,7 +92,8 @@ func New(opts *Options) (*NSQD, error) {
 	}
 
 	n := &NSQD{
-		startTime:            time.Now(),
+		startTime: time.Now(),
+		// topic 存储 map
 		topicMap:             make(map[string]*Topic),
 		exitChan:             make(chan int),
 		notifyChan:           make(chan interface{}),
@@ -106,6 +111,7 @@ func New(opts *Options) (*NSQD, error) {
 	n.swapOpts(opts)
 	n.errValue.Store(errStore{})
 
+	// 验证 dataPath 目录是否被占用
 	err = n.dl.Lock()
 	if err != nil {
 		return nil, fmt.Errorf("failed to lock data-path: %v", err)
@@ -141,6 +147,7 @@ func New(opts *Options) (*NSQD, error) {
 	n.logf(LOG_INFO, version.String("nsqd"))
 	n.logf(LOG_INFO, "ID: %d", opts.ID)
 
+	// 创建 tcpServer
 	n.tcpServer = &tcpServer{nsqd: n}
 	// tcp listener
 	n.tcpListener, err = net.Listen("tcp", opts.TCPAddress)
@@ -148,6 +155,7 @@ func New(opts *Options) (*NSQD, error) {
 		return nil, fmt.Errorf("listen (%s) failed - %s", opts.TCPAddress, err)
 	}
 	if opts.HTTPAddress != "" {
+		// 创建 http listener
 		n.httpListener, err = net.Listen("tcp", opts.HTTPAddress)
 		if err != nil {
 			return nil, fmt.Errorf("listen (%s) failed - %s", opts.HTTPAddress, err)

@@ -19,7 +19,8 @@ type Client interface {
 }
 
 type tcpServer struct {
-	nsqd  *NSQD
+	nsqd *NSQD
+	// 存储客户端的连接信息
 	conns sync.Map
 }
 
