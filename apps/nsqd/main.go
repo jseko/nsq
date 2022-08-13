@@ -31,9 +31,11 @@ func main() {
 }
 
 func (p *program) Init(env svc.Environment) error {
+	// 设置默认值
 	opts := nsqd.NewOptions()
-	// 解析命令行参数
+	// 命令行参数先设置默认值
 	flagSet := nsqdFlagSet(opts)
+	// 解析命令行参数
 	flagSet.Parse(os.Args[1:])
 
 	// 使用时间作为随机种子值
