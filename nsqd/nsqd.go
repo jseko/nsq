@@ -264,6 +264,7 @@ func (n *NSQD) Main() error {
 	}
 	// tcp
 	n.waitGroup.Wrap(func() {
+		// 开启一个 goroutine 创建 tcp server，里面是个无限 for 循环
 		exitFunc(protocol.TCPServer(n.tcpListener, n.tcpServer, n.logf))
 	})
 	// http
@@ -287,7 +288,7 @@ func (n *NSQD) Main() error {
 	if n.getOpts().StatsdAddress != "" {
 		n.waitGroup.Wrap(n.statsdLoop)
 	}
-	// 阻塞
+	// 会一直阻塞
 	err := <-exitCh
 	return err
 }

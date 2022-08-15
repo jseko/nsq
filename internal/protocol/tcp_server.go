@@ -20,6 +20,7 @@ func TCPServer(listener net.Listener, handler TCPHandler, logf lg.AppLogFunc) er
 	var wg sync.WaitGroup
 
 	for {
+		// 等待客户端的连接，会阻塞
 		clientConn, err := listener.Accept()
 		if err != nil {
 			if nerr, ok := err.(net.Error); ok && nerr.Temporary() {
@@ -34,7 +35,9 @@ func TCPServer(listener net.Listener, handler TCPHandler, logf lg.AppLogFunc) er
 			break
 		}
 
+		// 连接已经建立
 		wg.Add(1)
+		// 开启一个 goroutine 处理这个连接的数据I/O
 		go func() {
 			handler.Handle(clientConn)
 			wg.Done()
