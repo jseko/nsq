@@ -42,7 +42,9 @@ func (p *protocolV2) IOLoop(c protocol.Client) error {
 	var err error
 	var line []byte
 	var zeroTime time.Time
-
+	// 类型断言 x.(T)，x 是一个接口类型
+	// T 是具体类型，x 的动态类型是否就是T
+	// T 是接口类型，x 的动态类型是否满足T
 	client := c.(*clientV2)
 
 	// synchronize the startup of messagePump in order
