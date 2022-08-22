@@ -65,6 +65,7 @@ func (p *protocolV2) IOLoop(c protocol.Client) error {
 
 		// ReadSlice does not allocate new space for the data each request
 		// ie. the returned slice is only valid until the next call to it
+		// PUB <topic_name>\n 读取数据，直到出现第一个 \n
 		line, err = client.Reader.ReadSlice('\n')
 		if err != nil {
 			if err == io.EOF {
@@ -81,6 +82,7 @@ func (p *protocolV2) IOLoop(c protocol.Client) error {
 		if len(line) > 0 && line[len(line)-1] == '\r' {
 			line = line[:len(line)-1]
 		}
+		// PUB <topic_name> 根据空格拆分
 		params := bytes.Split(line, separatorBytes)
 
 		p.nsqd.logf(LOG_DEBUG, "PROTOCOL(V2): [%s] %s", client, params)
@@ -185,6 +187,7 @@ func (p *protocolV2) Exec(client *clientV2, params [][]byte) ([]byte, error) {
 	case bytes.Equal(params[0], []byte("REQ")):
 		return p.REQ(client, params)
 	case bytes.Equal(params[0], []byte("PUB")):
+		// 生产者-发布
 		return p.PUB(client, params)
 	case bytes.Equal(params[0], []byte("MPUB")):
 		return p.MPUB(client, params)
@@ -794,13 +797,13 @@ func (p *protocolV2) PUB(client *clientV2, params [][]byte) ([]byte, error) {
 	if len(params) < 2 {
 		return nil, protocol.NewFatalClientErr(nil, "E_INVALID", "PUB insufficient number of parameters")
 	}
-
+	// 提取 Topic 名称，并验证是否合法
 	topicName := string(params[1])
 	if !protocol.IsValidTopicName(topicName) {
 		return nil, protocol.NewFatalClientErr(nil, "E_BAD_TOPIC",
 			fmt.Sprintf("PUB topic name %q is not valid", topicName))
 	}
-
+	// 读取4字节，获取消息体字节大小
 	bodyLen, err := readLen(client.Reader, client.lenSlice)
 	if err != nil {
 		return nil, protocol.NewFatalClientErr(err, "E_BAD_MESSAGE", "PUB failed to read message body size")
@@ -817,6 +820,7 @@ func (p *protocolV2) PUB(client *clientV2, params [][]byte) ([]byte, error) {
 	}
 
 	messageBody := make([]byte, bodyLen)
+	// 读取消息内容
 	_, err = io.ReadFull(client.Reader, messageBody)
 	if err != nil {
 		return nil, protocol.NewFatalClientErr(err, "E_BAD_MESSAGE", "PUB failed to read message body")
