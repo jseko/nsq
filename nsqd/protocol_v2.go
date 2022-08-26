@@ -52,6 +52,7 @@ func (p *protocolV2) IOLoop(c protocol.Client) error {
 	// goroutine local state derived from client attributes
 	// and avoid a potential race with IDENTIFY (where a client
 	// could have changed or disabled said attributes)
+	// 同步 channel
 	messagePumpStartedChan := make(chan bool)
 	go p.messagePump(client, messagePumpStartedChan)
 	<-messagePumpStartedChan
@@ -88,6 +89,7 @@ func (p *protocolV2) IOLoop(c protocol.Client) error {
 		p.nsqd.logf(LOG_DEBUG, "PROTOCOL(V2): [%s] %s", client, params)
 
 		var response []byte
+		// 执行相应的指令
 		response, err = p.Exec(client, params)
 		if err != nil {
 			ctx := ""
@@ -110,6 +112,7 @@ func (p *protocolV2) IOLoop(c protocol.Client) error {
 		}
 
 		if response != nil {
+			// 发送响应给客户端
 			err = p.Send(client, frameTypeResponse, response)
 			if err != nil {
 				err = fmt.Errorf("failed to send response - %s", err)
@@ -219,6 +222,7 @@ func (p *protocolV2) messagePump(client *clientV2, startedChan chan bool) {
 	var sampleRate int32
 
 	subEventChan := client.SubEventChan
+	// Identify 完成 channel
 	identifyEventChan := client.IdentifyEventChan
 	outputBufferTicker := time.NewTicker(client.OutputBufferTimeout)
 	// 心跳 ticker
@@ -285,6 +289,7 @@ func (p *protocolV2) messagePump(client *clientV2, startedChan chan bool) {
 			subEventChan = nil
 		case identifyData := <-identifyEventChan:
 			// you can't IDENTIFY anymore
+			// select 不会选中值为 nil 的 channel
 			identifyEventChan = nil
 
 			outputBufferTicker.Stop()
@@ -306,6 +311,7 @@ func (p *protocolV2) messagePump(client *clientV2, startedChan chan bool) {
 			msgTimeout = identifyData.MsgTimeout
 		case <-heartbeatChan:
 			// 发送心跳检测
+			p.nsqd.logf(LOG_INFO, "发送心跳到客户端:%v", client.Conn.RemoteAddr().String())
 			err = p.Send(client, frameTypeResponse, heartbeatBytes)
 			if err != nil {
 				goto exit

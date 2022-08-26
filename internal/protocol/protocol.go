@@ -2,7 +2,6 @@ package protocol
 
 import (
 	"encoding/binary"
-	"fmt"
 	"io"
 	"net"
 )
@@ -39,8 +38,6 @@ func SendFramedResponse(w io.Writer, frameType int32, data []byte) (int, error) 
 	beBuf := make([]byte, 4)
 	size := uint32(len(data)) + 4
 	// 消息大小 message size = frameType(4byte) + len(data)
-	fmt.Printf("frameType:%v message size:%v", frameType, size)
-
 	binary.BigEndian.PutUint32(beBuf, size)
 	n, err := w.Write(beBuf)
 	if err != nil {
