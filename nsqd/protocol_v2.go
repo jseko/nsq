@@ -57,6 +57,7 @@ func (p *protocolV2) IOLoop(c protocol.Client) error {
 	go p.messagePump(client, messagePumpStartedChan)
 	<-messagePumpStartedChan
 
+	// 处理客户端发送过来的 command
 	for {
 		if client.HeartbeatInterval > 0 {
 			client.SetReadDeadline(time.Now().Add(client.HeartbeatInterval * 2))
