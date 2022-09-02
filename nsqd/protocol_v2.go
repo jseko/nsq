@@ -220,7 +220,7 @@ func (p *protocolV2) messagePump(client *clientV2, startedChan chan bool) {
 	// with >1 clients having >1 RDY counts
 	var flusherChan <-chan time.Time
 	var sampleRate int32
-
+	// 订阅事件 channel
 	subEventChan := client.SubEventChan
 	// Identify 完成 channel
 	identifyEventChan := client.IdentifyEventChan
@@ -835,9 +835,11 @@ func (p *protocolV2) PUB(client *clientV2, params [][]byte) ([]byte, error) {
 	if err := p.CheckAuth(client, "PUB", topicName, ""); err != nil {
 		return nil, err
 	}
-
+	// 获取 Topic
 	topic := p.nsqd.GetTopic(topicName)
+	// 创建 Message
 	msg := NewMessage(topic.GenerateID(), messageBody)
+	// 将 Message 发送给 Topic 中的队列 channel
 	err = topic.PutMessage(msg)
 	if err != nil {
 		return nil, protocol.NewFatalClientErr(err, "E_PUB_FAILED", "PUB failed "+err.Error())

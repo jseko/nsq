@@ -530,6 +530,7 @@ func (n *NSQD) GetTopic(topicName string) *Topic {
 	}
 
 	// now that all channels are added, start topic messagePump
+	// 启动 Topic
 	t.Start()
 	return t
 }
@@ -585,6 +586,7 @@ func (n *NSQD) Notify(v interface{}, persist bool) {
 				return
 			}
 			n.Lock()
+			// 持久化 topics/channels 信息
 			err := n.PersistMetadata()
 			if err != nil {
 				n.logf(LOG_ERROR, "failed to persist metadata - %s", err)

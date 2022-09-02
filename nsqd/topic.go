@@ -45,7 +45,7 @@ type Topic struct {
 func NewTopic(topicName string, nsqd *NSQD, deleteCallback func(*Topic)) *Topic {
 	t := &Topic{
 		name:              topicName,
-		channelMap:        make(map[string]*Channel),
+		channelMap:        make(map[string]*Channel), // 存储 Topic 下的 Channel 信息
 		memoryMsgChan:     nil,
 		startChan:         make(chan int, 1),
 		exitChan:          make(chan int),
@@ -54,10 +54,11 @@ func NewTopic(topicName string, nsqd *NSQD, deleteCallback func(*Topic)) *Topic 
 		paused:            0,
 		pauseChan:         make(chan int),
 		deleteCallback:    deleteCallback,
-		idFactory:         NewGUIDFactory(nsqd.getOpts().ID),
+		idFactory:         NewGUIDFactory(nsqd.getOpts().ID), // 消息ID工厂
 	}
 	// create mem-queue only if size > 0 (do not use unbuffered chan)
 	if nsqd.getOpts().MemQueueSize > 0 {
+		// 创建消息内存队列 channel
 		t.memoryMsgChan = make(chan *Message, nsqd.getOpts().MemQueueSize)
 	}
 	// 根据 topic 的名称后缀判断是否为临时 topic
@@ -227,6 +228,7 @@ func (t *Topic) put(m *Message) error {
 	select {
 	case t.memoryMsgChan <- m:
 	default:
+		// memoryMsgChan 满了，会执行 default，将消息写入磁盘
 		err := writeMessageToBackend(m, t.backend)
 		t.nsqd.SetHealth(err)
 		if err != nil {
@@ -263,6 +265,7 @@ func (t *Topic) messagePump() {
 		case <-t.exitChan:
 			goto exit
 		case <-t.startChan:
+			// Topic 启动了
 		}
 		break
 	}
@@ -279,7 +282,7 @@ func (t *Topic) messagePump() {
 	// main message loop
 	for {
 		select {
-		case msg = <-memoryMsgChan:
+		case msg = <-memoryMsgChan: // 从消息队列中获取消息
 		case buf = <-backendChan:
 			msg, err = decodeMessage(buf)
 			if err != nil {
