@@ -640,6 +640,7 @@ func (p *protocolV2) SUB(client *clientV2, params [][]byte) ([]byte, error) {
 	var channel *Channel
 	for i := 1; ; i++ {
 		topic := p.nsqd.GetTopic(topicName)
+		// 将 Channel 添加到 Topic
 		channel = topic.GetChannel(channelName)
 		// 将 client 添加到 channel
 		if err := channel.AddClient(client.ID, client); err != nil {

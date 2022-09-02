@@ -263,9 +263,11 @@ func (t *Topic) messagePump() {
 		case <-t.pauseChan:
 			continue
 		case <-t.exitChan:
+			// Topic 退出
 			goto exit
 		case <-t.startChan:
-			// Topic 启动了
+			// Topic 启动完成
+			t.nsqd.logf(LOG_INFO, "start Topic(%s) finished", t.name)
 		}
 		break
 	}
@@ -281,6 +283,7 @@ func (t *Topic) messagePump() {
 
 	// main message loop
 	for {
+		t.nsqd.logf(LOG_INFO, "Topic(%s) main message loop")
 		select {
 		case msg = <-memoryMsgChan: // 从消息队列中获取消息
 		case buf = <-backendChan:

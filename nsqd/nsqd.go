@@ -497,6 +497,7 @@ func (n *NSQD) GetTopic(topicName string) *Topic {
 	deleteCallback := func(t *Topic) {
 		n.DeleteExistingTopic(t.name)
 	}
+	// 创建 Topic
 	t = NewTopic(topicName, n, deleteCallback)
 	n.topicMap[topicName] = t
 
@@ -515,6 +516,7 @@ func (n *NSQD) GetTopic(topicName string) *Topic {
 	// to ensure that all channels receive published messages
 	lookupdHTTPAddrs := n.lookupdHTTPAddrs()
 	if len(lookupdHTTPAddrs) > 0 {
+		// 从 lookupd 获取 Topic 下的所有 Channel
 		channelNames, err := n.ci.GetLookupdTopicChannels(t.name, lookupdHTTPAddrs)
 		if err != nil {
 			n.logf(LOG_WARN, "failed to query nsqlookupd for channels to pre-create for topic %s - %s", t.name, err)
@@ -523,6 +525,7 @@ func (n *NSQD) GetTopic(topicName string) *Topic {
 			if strings.HasSuffix(channelName, "#ephemeral") {
 				continue // do not create ephemeral channel with no consumer client
 			}
+			// 将 Channel 添加到 Topic
 			t.GetChannel(channelName)
 		}
 	} else if len(n.getOpts().NSQLookupdTCPAddresses) > 0 {
