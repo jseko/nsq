@@ -283,7 +283,7 @@ func (t *Topic) messagePump() {
 
 	// main message loop
 	for {
-		t.nsqd.logf(LOG_INFO, "Topic(%s) main message loop")
+		t.nsqd.logf(LOG_INFO, "Topic(%s) main message loop", t.name)
 		select {
 		case msg = <-memoryMsgChan: // 从消息队列中获取消息
 		case buf = <-backendChan:
