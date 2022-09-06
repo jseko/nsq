@@ -202,6 +202,7 @@ func (p *protocolV2) Exec(client *clientV2, params [][]byte) ([]byte, error) {
 	case bytes.Equal(params[0], []byte("TOUCH")):
 		return p.TOUCH(client, params)
 	case bytes.Equal(params[0], []byte("SUB")):
+		// 消费者-订阅消息
 		return p.SUB(client, params)
 	case bytes.Equal(params[0], []byte("CLS")):
 		return p.CLS(client, params)
@@ -215,6 +216,7 @@ func (p *protocolV2) messagePump(client *clientV2, startedChan chan bool) {
 	var err error
 	var memoryMsgChan chan *Message
 	var backendMsgChan <-chan []byte
+	// 订阅 Channel
 	var subChannel *Channel
 	// NOTE: `flusherChan` is used to bound message latency for
 	// the pathological case of a channel on a low volume topic
@@ -617,13 +619,13 @@ func (p *protocolV2) SUB(client *clientV2, params [][]byte) ([]byte, error) {
 	if len(params) < 3 {
 		return nil, protocol.NewFatalClientErr(nil, "E_INVALID", "SUB insufficient number of parameters")
 	}
-
+	// Topic 名称
 	topicName := string(params[1])
 	if !protocol.IsValidTopicName(topicName) {
 		return nil, protocol.NewFatalClientErr(nil, "E_BAD_TOPIC",
 			fmt.Sprintf("SUB topic name %q is not valid", topicName))
 	}
-
+	// Channel 名称
 	channelName := string(params[2])
 	if !protocol.IsValidChannelName(channelName) {
 		return nil, protocol.NewFatalClientErr(nil, "E_BAD_CHANNEL",
