@@ -214,16 +214,17 @@ func (p *protocolV2) Exec(client *clientV2, params [][]byte) ([]byte, error) {
 
 func (p *protocolV2) messagePump(client *clientV2, startedChan chan bool) {
 	var err error
+	// 消费者 Channel 的消息队列
 	var memoryMsgChan chan *Message
 	var backendMsgChan <-chan []byte
-	// 订阅 Channel
+	// 消费者的订阅 Channel
 	var subChannel *Channel
 	// NOTE: `flusherChan` is used to bound message latency for
 	// the pathological case of a channel on a low volume topic
 	// with >1 clients having >1 RDY counts
 	var flusherChan <-chan time.Time
 	var sampleRate int32
-	// 订阅事件 channel
+	// 消费者 订阅事件 channel
 	subEventChan := client.SubEventChan
 	// Identify 完成 channel
 	identifyEventChan := client.IdentifyEventChan
@@ -346,7 +347,7 @@ func (p *protocolV2) messagePump(client *clientV2, startedChan chan bool) {
 
 			subChannel.StartInFlightTimeout(msg, client.ID, msgTimeout)
 			client.SendingMessage()
-			// 发送消息
+			// 将 Channel 中的消息发送给消费者
 			err = p.SendMessage(client, msg)
 			if err != nil {
 				goto exit
