@@ -645,7 +645,7 @@ func (p *protocolV2) SUB(client *clientV2, params [][]byte) ([]byte, error) {
 		topic := p.nsqd.GetTopic(topicName)
 		// 将 Channel 添加到 Topic
 		channel = topic.GetChannel(channelName)
-		// 将 client 添加到 channel
+		// 将 client 添加到 Channel（一个 Channel 可以对应多个 client）
 		if err := channel.AddClient(client.ID, client); err != nil {
 			return nil, protocol.NewFatalClientErr(err, "E_SUB_FAILED", "SUB failed "+err.Error())
 		}

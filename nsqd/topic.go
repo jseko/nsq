@@ -20,7 +20,8 @@ type Topic struct {
 
 	sync.RWMutex
 
-	name              string
+	name string
+	// 存储 Channel 信息
 	channelMap        map[string]*Channel
 	backend           BackendQueue
 	memoryMsgChan     chan *Message
