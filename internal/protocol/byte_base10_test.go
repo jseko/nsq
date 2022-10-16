@@ -1,6 +1,7 @@
 package protocol
 
 import (
+	"github.com/nsqio/nsq/internal/test"
 	"testing"
 )
 
@@ -22,4 +23,11 @@ func BenchmarkByteToBase10Invalid(b *testing.B) {
 		n, _ = ByteToBase10(bt)
 	}
 	result = n
+}
+
+func TestByteToBase10(t *testing.T) {
+	bt := []byte{'2', '6'}
+	base10, err := ByteToBase10(bt)
+	test.Equal(t, nil, err)
+	test.Equal(t, uint64(26), base10)
 }

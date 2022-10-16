@@ -112,6 +112,7 @@ func (t *Topic) GetChannel(channelName string) *Channel {
 	t.Unlock()
 
 	if isNew {
+		// 新增的 Channel
 		// update messagePump state
 		select {
 		case t.channelUpdateChan <- 1:
@@ -294,6 +295,7 @@ func (t *Topic) messagePump() {
 				continue
 			}
 		case <-t.channelUpdateChan:
+			// 有新的 Channel 加入，需要更新 chans
 			chans = chans[:0]
 			t.RLock()
 			for _, c := range t.channelMap {
@@ -333,9 +335,11 @@ func (t *Topic) messagePump() {
 				chanMsg.deferred = msg.deferred
 			}
 			if chanMsg.deferred != 0 {
+				// 延迟消息
 				channel.PutMessageDeferred(chanMsg, chanMsg.deferred)
 				continue
 			}
+			// 将 msg 写入 Channel
 			err := channel.PutMessage(chanMsg)
 			if err != nil {
 				t.nsqd.logf(LOG_ERROR,
