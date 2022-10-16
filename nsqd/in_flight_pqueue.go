@@ -1,5 +1,14 @@
 package nsqd
 
+/*
+优先队列：最小堆实现
+1.用来保证消息至少投递一次，将已投递给客户端的消息加上超时时间放入优先队列，并启动 ticker 检查堆顶元素的到期时间，
+如果客户端在收到消息后及时回复FIN，会从优先队列中删除消息，如果有消息到期，则会重新投递，
+保证消息最少投递一次。
+
+2.用来实现延迟消息，以消息的到期时间作为优先级。
+*/
+
 type inFlightPqueue []*Message
 
 func newInFlightPqueue(capacity int) inFlightPqueue {
