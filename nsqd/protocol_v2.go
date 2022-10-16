@@ -185,8 +185,12 @@ func (p *protocolV2) Exec(client *clientV2, params [][]byte) ([]byte, error) {
 	}
 	switch {
 	case bytes.Equal(params[0], []byte("FIN")):
+		// 消费者消息处理完的确认
+		// Finish a message (indicate successful processing)
 		return p.FIN(client, params)
 	case bytes.Equal(params[0], []byte("RDY")):
+		// 消费者准备接收消息
+		// Update RDY state (indicate you are ready to receive N messages)
 		return p.RDY(client, params)
 	case bytes.Equal(params[0], []byte("REQ")):
 		return p.REQ(client, params)
