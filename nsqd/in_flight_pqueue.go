@@ -7,6 +7,8 @@ package nsqd
 保证消息最少投递一次。
 
 2.用来实现延迟消息，以消息的到期时间作为优先级。
+
+https://zhuanlan.zhihu.com/p/133412082
 */
 
 type inFlightPqueue []*Message
