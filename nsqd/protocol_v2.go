@@ -55,6 +55,7 @@ func (p *protocolV2) IOLoop(c protocol.Client) error {
 	// 同步 channel
 	messagePumpStartedChan := make(chan bool)
 	go p.messagePump(client, messagePumpStartedChan)
+	// 阻塞，直到 close channel
 	<-messagePumpStartedChan
 
 	// 处理客户端发送过来的 command
@@ -134,6 +135,7 @@ func (p *protocolV2) IOLoop(c protocol.Client) error {
 func (p *protocolV2) SendMessage(client *clientV2, msg *Message) error {
 	p.nsqd.logf(LOG_DEBUG, "PROTOCOL(V2): writing msg(%s) to client(%s) - %s", msg.ID, client, msg.Body)
 
+	// 缓冲池
 	buf := bufferPoolGet()
 	defer bufferPoolPut(buf)
 
@@ -141,7 +143,7 @@ func (p *protocolV2) SendMessage(client *clientV2, msg *Message) error {
 	if err != nil {
 		return err
 	}
-
+	// 发送消息给客户端
 	err = p.Send(client, frameTypeMessage, buf.Bytes())
 	if err != nil {
 		return err
@@ -159,7 +161,7 @@ func (p *protocolV2) Send(client *clientV2, frameType int32, data []byte) error 
 	} else {
 		client.SetWriteDeadline(zeroTime)
 	}
-
+	// client.Writer
 	_, err := protocol.SendFramedResponse(client.Writer, frameType, data)
 	if err != nil {
 		client.writeLock.Unlock()
@@ -228,7 +230,7 @@ func (p *protocolV2) messagePump(client *clientV2, startedChan chan bool) {
 	// with >1 clients having >1 RDY counts
 	var flusherChan <-chan time.Time
 	var sampleRate int32
-	// 消费者 订阅事件 channel
+	// 消费者 订阅事件 channel，只有消费者 SubEventChan 才会有值
 	subEventChan := client.SubEventChan
 	// Identify 完成 channel
 	identifyEventChan := client.IdentifyEventChan
@@ -291,7 +293,7 @@ func (p *protocolV2) messagePump(client *clientV2, startedChan chan bool) {
 			}
 			flushed = true
 		case <-client.ReadyStateChan:
-		case subChannel = <-subEventChan:
+		case subChannel = <-subEventChan: // 消费者订阅事件，获取到具体的 Channel
 			// you can't SUB anymore
 			// 一个 Client 只能订阅一次，不能多次订阅
 			subEventChan = nil
@@ -343,7 +345,7 @@ func (p *protocolV2) messagePump(client *clientV2, startedChan chan bool) {
 				goto exit
 			}
 			flushed = false
-		case msg := <-memoryMsgChan:
+		case msg := <-memoryMsgChan: // 从 Channel 中获取消息
 			if sampleRate > 0 && rand.Int31n(100) > sampleRate {
 				continue
 			}
@@ -351,7 +353,7 @@ func (p *protocolV2) messagePump(client *clientV2, startedChan chan bool) {
 
 			subChannel.StartInFlightTimeout(msg, client.ID, msgTimeout)
 			client.SendingMessage()
-			// 将 Channel 中的消息发送给消费者
+			// 将 Channel 中的消息发送给消费者client
 			err = p.SendMessage(client, msg)
 			if err != nil {
 				goto exit
