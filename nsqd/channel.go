@@ -451,6 +451,7 @@ func (c *Channel) StartInFlightTimeout(msg *Message, clientID int64, timeout tim
 	msg.clientID = clientID
 	msg.deliveryTS = now
 	msg.pri = now.Add(timeout).UnixNano()
+	// 将消息放入 inFlightMessages
 	err := c.pushInFlightMessage(msg)
 	if err != nil {
 		return err

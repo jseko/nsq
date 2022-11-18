@@ -18,7 +18,8 @@ type Message struct {
 	ID        MessageID
 	Body      []byte
 	Timestamp int64
-	Attempts  uint16
+	// 尝试次数，每次发送给消费者都会增加1
+	Attempts uint16
 
 	// for in-flight handling
 	deliveryTS time.Time
