@@ -206,6 +206,7 @@ func (p *protocolV2) Exec(client *clientV2, params [][]byte) ([]byte, error) {
 	case bytes.Equal(params[0], []byte("NOP")):
 		return p.NOP(client, params)
 	case bytes.Equal(params[0], []byte("TOUCH")):
+		// Reset the timeout for an in-flight message
 		return p.TOUCH(client, params)
 	case bytes.Equal(params[0], []byte("SUB")):
 		// 消费者-订阅消息
