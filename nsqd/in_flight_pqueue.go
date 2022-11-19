@@ -11,6 +11,7 @@ package nsqd
 https://zhuanlan.zhihu.com/p/133412082
 */
 
+// 已投递，未确认的消息
 type inFlightPqueue []*Message
 
 func newInFlightPqueue(capacity int) inFlightPqueue {
@@ -73,6 +74,7 @@ func (pq *inFlightPqueue) PeekAndShift(max int64) (*Message, int64) {
 
 	x := (*pq)[0]
 	if x.pri > max {
+		// max 是当前时间戳，如果 pri 大于当前时间，说明 pri 代表的时间还没有到
 		return nil, x.pri - max
 	}
 	pq.Pop()

@@ -10,6 +10,8 @@ type Item struct {
 	Index    int
 }
 
+// 优先级队列，最小堆，用于延迟消息、需要重新投递的消息（消费者处理消息失败）
+
 // this is a priority queue as implemented by a min heap
 // ie. the 0th element is the *lowest* value
 type PriorityQueue []*Item
@@ -18,6 +20,7 @@ func New(capacity int) PriorityQueue {
 	return make(PriorityQueue, 0, capacity)
 }
 
+// 按照 Priority 字段排序
 func (pq PriorityQueue) Len() int {
 	return len(pq)
 }
