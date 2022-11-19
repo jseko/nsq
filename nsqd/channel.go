@@ -351,10 +351,12 @@ func (c *Channel) TouchMessage(clientID int64, id MessageID, clientMsgTimeout ti
 
 // FinishMessage successfully discards an in-flight message
 func (c *Channel) FinishMessage(clientID int64, id MessageID) error {
+	// 从 in-flight 中移除消息
 	msg, err := c.popInFlightMessage(clientID, id)
 	if err != nil {
 		return err
 	}
+	// 从优先队列中移除消息
 	c.removeFromInFlightPQ(msg)
 	if c.e2eProcessingLatencyStream != nil {
 		c.e2eProcessingLatencyStream.Insert(msg.Timestamp)
@@ -450,12 +452,14 @@ func (c *Channel) StartInFlightTimeout(msg *Message, clientID int64, timeout tim
 	now := time.Now()
 	msg.clientID = clientID
 	msg.deliveryTS = now
+	// 优先级
 	msg.pri = now.Add(timeout).UnixNano()
 	// 将消息放入 inFlightMessages
 	err := c.pushInFlightMessage(msg)
 	if err != nil {
 		return err
 	}
+	// 将消息放入优先队列
 	c.addToInFlightPQ(msg)
 	return nil
 }
@@ -492,6 +496,7 @@ func (c *Channel) popInFlightMessage(clientID int64, id MessageID) (*Message, er
 		c.inFlightMutex.Unlock()
 		return nil, errors.New("ID not in flight")
 	}
+	// 判断是不是同一个client，不同的 client 中有可能 msg id 相同
 	if msg.clientID != clientID {
 		c.inFlightMutex.Unlock()
 		return nil, errors.New("client does not own message")
@@ -593,6 +598,7 @@ func (c *Channel) processInFlightQueue(t int64) bool {
 	dirty := false
 	for {
 		c.inFlightMutex.Lock()
+		// 获取一个超时未确认的消息
 		msg, _ := c.inFlightPQ.PeekAndShift(t)
 		c.inFlightMutex.Unlock()
 
@@ -601,17 +607,20 @@ func (c *Channel) processInFlightQueue(t int64) bool {
 		}
 		dirty = true
 
+		//  将 message 从 in-flight 中移除
 		_, err := c.popInFlightMessage(msg.clientID, msg.ID)
 		if err != nil {
 			goto exit
 		}
 		atomic.AddUint64(&c.timeoutCount, 1)
 		c.RLock()
+		// 根据 msg 中的 clientID，从 clients 中获取 client
 		client, ok := c.clients[msg.clientID]
 		c.RUnlock()
 		if ok {
 			client.TimedOutMessage()
 		}
+		// 将消息放入Channel 中的 memoryMsgChan，准备发送给消费者
 		c.put(msg)
 	}
 

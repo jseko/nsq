@@ -351,7 +351,7 @@ func (p *protocolV2) messagePump(client *clientV2, startedChan chan bool) {
 				continue
 			}
 			msg.Attempts++
-
+			// 启动消息超时 in-flight
 			subChannel.StartInFlightTimeout(msg, client.ID, msgTimeout)
 			client.SendingMessage()
 			// 将 Channel 中的消息发送给消费者client
