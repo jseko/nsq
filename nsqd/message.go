@@ -40,8 +40,9 @@ func NewMessage(id MessageID, body []byte) *Message {
 func (m *Message) WriteTo(w io.Writer) (int64, error) {
 	var buf [10]byte
 	var total int64
-
+	// Timestamp
 	binary.BigEndian.PutUint64(buf[:8], uint64(m.Timestamp))
+	// Attempts
 	binary.BigEndian.PutUint16(buf[8:10], uint16(m.Attempts))
 
 	n, err := w.Write(buf[:])
@@ -49,13 +50,13 @@ func (m *Message) WriteTo(w io.Writer) (int64, error) {
 	if err != nil {
 		return total, err
 	}
-
+	// ID
 	n, err = w.Write(m.ID[:])
 	total += int64(n)
 	if err != nil {
 		return total, err
 	}
-
+	// Body
 	n, err = w.Write(m.Body)
 	total += int64(n)
 	if err != nil {

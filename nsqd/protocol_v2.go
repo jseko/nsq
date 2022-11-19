@@ -138,7 +138,7 @@ func (p *protocolV2) SendMessage(client *clientV2, msg *Message) error {
 	// 缓冲池
 	buf := bufferPoolGet()
 	defer bufferPoolPut(buf)
-
+	// 消息转换成字节切片
 	_, err := msg.WriteTo(buf)
 	if err != nil {
 		return err

@@ -49,6 +49,7 @@ func (p *tcpServer) Handle(conn net.Conn) {
 		prot = &protocolV2{nsqd: p.nsqd}
 	default:
 		protocol.SendFramedResponse(conn, frameTypeError, []byte("E_BAD_PROTOCOL"))
+		// 协议错误，关闭连接
 		conn.Close()
 		p.nsqd.logf(LOG_ERROR, "client(%s) bad protocol magic '%s'",
 			conn.RemoteAddr(), protocolMagic)
