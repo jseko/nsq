@@ -62,6 +62,7 @@ func (pq *inFlightPqueue) Remove(i int) *Message {
 		pq.up(i)
 	}
 	x := (*pq)[n-1]
+	// index 设置成-1
 	x.index = -1
 	*pq = (*pq)[0 : n-1]
 	return x

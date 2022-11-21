@@ -63,9 +63,11 @@ type Channel struct {
 	e2eProcessingLatencyStream *quantile.Quantile
 
 	// TODO: these can be DRYd up
+	// 延迟消息
 	deferredMessages map[MessageID]*pqueue.Item
 	deferredPQ       pqueue.PriorityQueue
 	deferredMutex    sync.Mutex
+	// 已投递，还未确认的消息
 	inFlightMessages map[MessageID]*Message
 	inFlightPQ       inFlightPqueue
 	inFlightMutex    sync.Mutex
@@ -451,6 +453,7 @@ func (c *Channel) RemoveClient(clientID int64) {
 func (c *Channel) StartInFlightTimeout(msg *Message, clientID int64, timeout time.Duration) error {
 	now := time.Now()
 	msg.clientID = clientID
+	// 消息投递时间
 	msg.deliveryTS = now
 	// 优先级
 	msg.pri = now.Add(timeout).UnixNano()
@@ -459,7 +462,7 @@ func (c *Channel) StartInFlightTimeout(msg *Message, clientID int64, timeout tim
 	if err != nil {
 		return err
 	}
-	// 将消息放入优先队列
+	// 将消息放入优先队列 inFlightPQ
 	c.addToInFlightPQ(msg)
 	return nil
 }
