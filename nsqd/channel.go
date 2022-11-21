@@ -96,7 +96,7 @@ func NewChannel(topicName string, channelName string, nsqd *NSQD,
 			nsqd.getOpts().E2EProcessingLatencyPercentiles,
 		)
 	}
-
+	// 初始化优先级队列
 	c.initPQ()
 
 	if strings.HasSuffix(channelName, "#ephemeral") {
@@ -129,11 +129,13 @@ func NewChannel(topicName string, channelName string, nsqd *NSQD,
 func (c *Channel) initPQ() {
 	pqSize := int(math.Max(1, float64(c.nsqd.getOpts().MemQueueSize)/10))
 
+	// 已投递，还未确认的消息
 	c.inFlightMutex.Lock()
 	c.inFlightMessages = make(map[MessageID]*Message)
 	c.inFlightPQ = newInFlightPqueue(pqSize)
 	c.inFlightMutex.Unlock()
 
+	// 延迟消息
 	c.deferredMutex.Lock()
 	c.deferredMessages = make(map[MessageID]*pqueue.Item)
 	c.deferredPQ = pqueue.New(pqSize)
