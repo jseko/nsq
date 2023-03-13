@@ -1,0 +1,8 @@
+tasks:
+  - init: |
+      echo 'init: build project. variables var1=$var1' && date && echo "variables var1=${var1} projectvar1=${projectvar1} projectvar2=${projectvar2}"
+    command: |
+      echo 'command: start app. variables var1=$var1' && date && echo "variables var1=${var1} projectvar1=${projectvar1} projectvar2=${projectvar2}"
+vscode:
+  extensions:
+    - golang.go
